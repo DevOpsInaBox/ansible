@@ -1,0 +1,53 @@
+---
+- hosts: all
+  connection: local
+  gather_facts: no
+  tasks:
+   - name: Obtain Creds
+     include_vars: secrets.yaml
+
+   - name: Define Provider
+     set_fact:
+      provider:
+       host: "{{ inventory_hostname }}"
+       username: "{{ creds['username'] }}"
+       password: "{{ creds['password'] }}"
+       auth_pass: "{{ creds['auth_pass'] }}"
+
+   - name: Before creating VLAN
+     ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+       - show vlan
+     register: BeforeVLAN
+   - debug: var=BeforeVLAN.stdout_lines
+
+   - name: Create Vlan 11 with name VLAN 11 & Assign Fast Ethernet ports 16-17 to VLAN 11
+     ios_config:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+       - configure terminal
+       - vlan database
+       - vlan 11
+       - interface vlan 11
+       - name SDN-VLAN11
+       - exit
+       - interface range FastEthernet16-17
+       - switchport mode access
+       - switchport access vlan 11
+       - exit
+       - exit
+      match: strict
+
+   - name: After Creating VLAN 11 and assigning ports
+     ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+       - show vlan
+     register: AfterVlan
+   - debug: var=AfterVlan.stdout_lines
+
+

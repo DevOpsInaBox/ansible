@@ -1,0 +1,76 @@
+---
+- hosts: all
+  gather_facts: no
+  connection: local
+  tasks:
+   - name: Obtain login creds
+     include_vars: secrets.yaml
+
+   - name: Define Provider
+     set_fact:
+      provider:
+       host: "{{ inventory_hostname }}"
+       username: "{{ creds['username'] }}"
+       password: "{{ creds['password'] }}"
+       auth_pass: "{{ creds['auth_pass'] }}"
+
+   - name: Current Hostname
+     ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+       - show system
+     register: system
+   - debug: var=system.stdout_lines
+
+   - name: Current Interface FastEthernet 2 name
+     ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+       - show running-config interface FastEthernet2
+     register: desc
+   - debug: var=desc.stdout_lines
+
+
+
+#   - name: Assigning Hostname Through Ansible
+#     ios_config: 
+#      provider: "{{ provider }}"
+#      authorize: yes
+#      lines: ['hostname {{ new_hostname }}'] 
+#      match: strict
+
+
+   - name: Changing Description of port FastEthernet2
+     ios_config:
+      provider: "{{ provider }}"
+      authorize: yes
+      parents: interface FastEthernet2
+      commands: 
+       - configure terminal
+       - interface FastEthernet2
+       - description Via_Ansible_For_SDNInaBox
+       - no shutdown
+       - exit
+       - exit
+      match: strict
+   
+   - name: Welcome to SDN!! The changed hostname via the SDN controller
+     ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+       - show system
+     register: system1
+   - debug: var=system1.stdout_lines
+
+   - name: Modified Interface FastEthernet 2 name via the SDN Controller
+     ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands:
+       - show running-config interface FastEthernet2
+     register: desc1
+   - debug: var=desc1.stdout_lines 
+

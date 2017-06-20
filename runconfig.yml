@@ -1,0 +1,28 @@
+---
+- hosts: all
+  gather_facts: no
+  connection: local
+  tasks:
+   - name: Obtain login creds
+     include_vars: secrets.yaml
+
+   - name: Define Provider
+     set_fact:
+      provider:
+       host: "{{ inventory_hostname }}"
+       username: "{{ creds['username'] }}"
+       password: "{{ creds['password'] }}"
+       auth_pass: "{{ creds['auth_pass'] }}"
+
+   - name: Show Running Configuration | File will be backedup under /home/ansible as SF300.conf
+     ios_command:
+      provider: "{{ provider }}"
+      authorize: yes
+      commands: 
+       - copy running-config scp://ansible:admin123@192.168.1.17/SF300.conf
+
+   - name: Processing the config file
+     shell: "sed -i '/encrypted ip ssh-client key rsa key-pair/Q' /home/ansible/SF300.conf"
+#     deligate_to: localhost
+
+
