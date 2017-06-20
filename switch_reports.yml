@@ -20,7 +20,7 @@
       authorize: yes
       commands:
        - show version
-     register: ver	
+      register: ver	
    - debug: var=ver.stdout_lines
 
    - ios_command:
